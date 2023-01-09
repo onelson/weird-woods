@@ -5,14 +5,15 @@
 		"doc": "https://ldtk.io/json",
 		"schema": "https://ldtk.io/files/JSON_SCHEMA.json",
 		"appAuthor": "Sebastien 'deepnight' Benard",
-		"appVersion": "1.2.3",
+		"appVersion": "1.2.5",
 		"url": "https://ldtk.io"
 	},
 	"iid": "23336890-7820-11ed-976d-9923c9b0d791",
-	"jsonVersion": "1.2.3",
-	"appBuildId": 464726,
-	"nextUid": 6,
+	"jsonVersion": "1.2.5",
+	"appBuildId": 464870,
+	"nextUid": 7,
 	"identifierStyle": "Capitalize",
+	"toc": [],
 	"worldLayout": "Free",
 	"worldGridWidth": 256,
 	"worldGridHeight": 256,
@@ -42,6 +43,7 @@
 			"identifier": "Entities",
 			"type": "Entities",
 			"uid": 3,
+			"doc": null,
 			"gridSize": 16,
 			"guideGridWid": 0,
 			"guideGridHei": 0,
@@ -69,6 +71,7 @@
 			"identifier": "Tiles",
 			"type": "Tiles",
 			"uid": 2,
+			"doc": null,
 			"gridSize": 16,
 			"guideGridWid": 0,
 			"guideGridHei": 0,
@@ -93,9 +96,11 @@
 		}
 	], "entities": [
 		{
-			"identifier": "Player_Start",
+			"identifier": "PlayerStart",
 			"uid": 4,
 			"tags": ["spawn"],
+			"exportToToc": false,
+			"doc": null,
 			"width": 16,
 			"height": 16,
 			"resizableX": false,
@@ -133,8 +138,16 @@
 			"spacing": 0,
 			"padding": 0,
 			"tags": [],
-			"tagsSourceEnumUid": null,
-			"enumTags": [],
+			"tagsSourceEnumUid": 6,
+			"enumTags": [ { "enumValueId": "Walkable", "tileIds": [0,1,2,3,4,5,16,17,18,19,20,21,32,33,34,35,36,37,48,49,50,51,74,81,82,88,89,90,92,94,97,98,104,105,106,226] }, { "enumValueId": "Swimmable", "tileIds": [145,146,148,161,162,164,180,196,212,228] }, {
+				"enumValueId": "Ledge",
+				"tileIds": [
+					6,7,22,23,38,39,52,53,57,58,64,65,66,67,68,69,72,73,80,83,96,99,100,101,112,113,114,115,116,117,128,129,130,131,132,
+					133,136,137,138,139,144,147,149,150,151,152,155,156,160,163,165,166,167,172,173,175,176,177,178,179,181,182,183,185,186,188,189,191,195,197,
+					198,199,200,203,204,205,207,211,213,214,215,216,217,218,219,220,221,223,227,229,230,231,232,233,234,235,236,237,239,240,241,242,243,248,249,
+					250,251,252,253,255
+				]
+			} ],
 			"customData": [],
 			"savedSelections": [],
 			"cachedPixelData": {
@@ -142,7 +155,11 @@
 				"averageColors": "f673f763f673f673f874f874f774f573b7a3c59338c30000c6a3f7c3c5930000f774f874f874f673f773f774f874f774f583f574f593c6a3f8c3f7b3f8c3c593f673f874f874f773f773f773f563f653f553f563f693f6a3f7b3f8c3f483f354f673f773f773f673f773f87376537543f573f774f6638344f593f373f364b325f773f873f873f773f873f873f774f553f653f663f56400006334f463a2246113f873f573f573f873f973fa738775a665f664f674f6870000f563f774f5630000f873f673f573f773f554f554f564f664f886f884f794000071135113f3648335f773f873f863f763f554f5540000000000000000000000007697711363350000f873f763f664f873f764f764000000004a836a8399834a8379866113f3220000f763f245f245f874f245c873c8634a83d87300000000d8734a83000000000000f764f245f245f764f244f873e873998300000000000000009983f773f945f773f773f764f774f773f234b753c96398730000f654f76400009873f764f945f664c863f863f753ca83f244a743b8639862f87300000000f8739753f863fb99f8634852f532f643fa83f25598539853a973f863f863f863f8638753f853fcbbf9637863f653f662fa83f25588637862f773f863f853f962f862f763f763fdcdf863fa73fa73fa73f8620000563357430000f763f863f863f7730000f763fa77f874"
 			}
 		}
-	], "enums": [], "externalEnums": [], "levelFields": [] },
+	], "enums": [{ "identifier": "TileType", "uid": 6, "values": [
+		{ "id": "Walkable", "tileId": null, "color": 12470831, "__tileSrcRect": null },
+		{ "id": "Swimmable", "tileId": null, "color": 14120515, "__tileSrcRect": null },
+		{ "id": "Ledge", "tileId": null, "color": 15389866, "__tileSrcRect": null }
+	], "iconTilesetUid": 1, "externalRelPath": null, "externalFileChecksum": null, "tags": ["movement"] }], "externalEnums": [], "levelFields": [] },
 	"levels": [
 		{
 			"identifier": "Level_0",
@@ -190,7 +207,7 @@
 					"gridTiles": [],
 					"entityInstances": [
 						{
-							"__identifier": "Player_Start",
+							"__identifier": "PlayerStart",
 							"__grid": [13,2],
 							"__pivot": [0,0],
 							"__tags": ["spawn"],
