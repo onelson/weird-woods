@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
-use iyes_loopless::prelude::*;
 use leafwing_input_manager::prelude::*;
 use std::time::Duration;
 
@@ -88,7 +87,7 @@ fn player_movement(mut query: Query<(&mut Transform, &ActionState<Action>), With
 
 fn main() {
     App::new()
-        .add_fixed_timestep(Duration::from_millis(16), "my_fixed_update")
+        .insert_resource(FixedTime::new(Duration::from_millis(16)))
         .add_plugins(DefaultPlugins)
         .add_plugin(LdtkPlugin)
         .register_ldtk_entity::<PlayerStartBundle>("PlayerStart")
