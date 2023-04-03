@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ecs_ldtk::prelude::*;
+use bevy_ecs_ldtk::{prelude::*, utils::grid_coords_to_translation};
 use leafwing_input_manager::prelude::*;
 use std::time::Duration;
 
@@ -32,16 +32,25 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn spawn_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    level_query: Query<(Entity, &Handle<LdtkLevel>)>,
+    levels: Res<Assets<LdtkLevel>>,
     query: Query<&GridCoords, Added<PlayerStart>>,
 ) {
-    if let Ok(_coords) = query.get_single() {
-        // FIXME: need a way to use the grid coordinates to position the player sprite
-        // Possibly we can use `Assets<LdtkLevel>`? Look at the platform example.
+    if let Ok(&coords) = query.get_single() {
+        let (_, level_handle) = level_query.single();
+        let level = levels.get(level_handle).expect("level");
+
+        let LayerInstance { c_wid, c_hei, .. } =
+            &level.level.layer_instances.as_ref().expect("layer")[0];
+        let size: IVec2 = (*c_wid, *c_hei).into();
+
+        let trans = grid_coords_to_translation(coords, size);
+
         commands.spawn((
             Player,
             SpriteBundle {
                 texture: asset_server.load("player.png"),
-                transform: Transform::from_xyz(0., 0., 10.),
+                transform: Transform::from_xyz(trans.x, trans.y, 10.),
                 ..default()
             },
             InputManagerBundle::<Action> {
