@@ -1,25 +1,29 @@
 use bevy::prelude::*;
-use bevy_ecs_ldtk::{prelude::*, utils::grid_coords_to_translation};
+use bevy_ecs_ldtk::prelude::*;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+#[derive(Reflect, Resource, Default, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+struct DebugData {
+    grid_sizing: GridSizing,
+    player_translation: Vec2,
+    tile_offset: TileOffset,
+    tile_id: TileId,
+    tile_types: Vec<TileType>,
+}
+
+use crate::tilemap::{GridSizing, TileData, TileId, TileOffset, TileType};
+use bevy::window::{PresentMode, WindowTheme};
 use leafwing_input_manager::prelude::*;
+use player::{Action, PlayerStartBundle};
 use std::time::Duration;
 
-#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
-pub enum Action {
-    Confirm,
-    Up,
-    Down,
-    Left,
-    Right,
-}
+mod player;
+mod tilemap;
 
 #[derive(Component)]
 struct GameCamera;
-
-#[derive(Default, Component)]
-struct PlayerStart;
-
-#[derive(Default, Component)]
-struct Player;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default()).insert(GameCamera);
@@ -27,91 +31,54 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ldtk_handle: asset_server.load("levels/initial.ldtk"),
         ..default()
     });
+    commands.insert_resource(TileData::default());
 }
 
-fn spawn_player(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    level_query: Query<(Entity, &Handle<LdtkLevel>)>,
-    levels: Res<Assets<LdtkLevel>>,
-    query: Query<&GridCoords, Added<PlayerStart>>,
-) {
-    if let Ok(&coords) = query.get_single() {
-        let (_, level_handle) = level_query.single();
-        let level = levels.get(level_handle).expect("level");
-
-        let LayerInstance { c_wid, c_hei, .. } =
-            &level.level.layer_instances.as_ref().expect("layer")[0];
-        let size: IVec2 = (*c_wid, *c_hei).into();
-
-        let trans = grid_coords_to_translation(coords, size);
-
-        commands.spawn((
-            Player,
-            SpriteBundle {
-                texture: asset_server.load("player.png"),
-                transform: Transform::from_xyz(trans.x, trans.y, 10.),
-                ..default()
-            },
-            InputManagerBundle::<Action> {
-                action_state: ActionState::default(),
-                input_map: InputMap::new([
-                    (KeyCode::Space, Action::Confirm),
-                    (KeyCode::Return, Action::Confirm),
-                    (KeyCode::Up, Action::Up),
-                    (KeyCode::W, Action::Up),
-                    (KeyCode::Down, Action::Down),
-                    (KeyCode::S, Action::Down),
-                    (KeyCode::Left, Action::Left),
-                    (KeyCode::A, Action::Left),
-                    (KeyCode::Right, Action::Right),
-                    (KeyCode::D, Action::Right),
-                ]),
-            },
-        ));
-    }
-}
-
-/// Update player positions based on active input state.
-fn player_movement(mut query: Query<(&mut Transform, &ActionState<Action>), With<Player>>) {
-    // FIXME: fit the movement to be aligned with the tile grid.
-    // FIXME: only apply new position if the terrain permits it.
-
-    const MOVE_SPEED: f32 = 4.0;
-    for (mut xform, action) in &mut query {
-        if action.pressed(Action::Up) {
-            xform.translation.y += MOVE_SPEED;
-        }
-        if action.pressed(Action::Down) {
-            xform.translation.y -= MOVE_SPEED;
-        }
-        if action.pressed(Action::Left) {
-            xform.translation.x -= MOVE_SPEED;
-        }
-        if action.pressed(Action::Right) {
-            xform.translation.x += MOVE_SPEED;
-        }
+pub fn zoom_in(mut query: Query<&mut OrthographicProjection, With<Camera>>) {
+    for mut projection in query.iter_mut() {
+        projection.viewport_origin = (0., 0.).into();
+        projection.scale = 0.25;
     }
 }
 
 fn main() {
+    let window_cfg = Window {
+        title: "Weird Woods".into(),
+        resolution: (1024., 1024.).into(),
+        present_mode: PresentMode::AutoVsync,
+        fit_canvas_to_parent: true,
+        prevent_default_event_handling: false,
+        window_theme: Some(WindowTheme::Dark),
+        ..default()
+    };
+
     App::new()
         .insert_resource(FixedTime::new(Duration::from_millis(16)))
-        .add_plugins(DefaultPlugins)
-        .add_plugin(LdtkPlugin)
+        .init_resource::<DebugData>()
+        .register_type::<DebugData>()
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(window_cfg),
+                ..default()
+            }),
+            // bevy::diagnostic::LogDiagnosticsPlugin::default(),
+            // bevy::diagnostic::FrameTimeDiagnosticsPlugin,
+            LdtkPlugin,
+            InputManagerPlugin::<Action>::default(),
+            ResourceInspectorPlugin::<DebugData>::default(),
+        ))
         .register_ldtk_entity::<PlayerStartBundle>("PlayerStart")
-        .add_plugin(InputManagerPlugin::<Action>::default())
-        .add_system(bevy::window::close_on_esc)
-        .add_startup_system(setup)
+        .add_systems(Startup, (setup,))
         .insert_resource(LevelSelection::Index(0))
-        .add_system(spawn_player)
-        .add_system(player_movement)
+        .add_systems(
+            Update,
+            (
+                zoom_in,
+                player::player_movement,
+                bevy::window::close_on_esc,
+                tilemap::setup_tileset_enums,
+                player::spawn_player,
+            ),
+        )
         .run();
-}
-
-#[derive(Bundle, LdtkEntity)]
-pub struct PlayerStartBundle {
-    player_start: PlayerStart,
-    #[grid_coords]
-    grid_coords: GridCoords,
 }
