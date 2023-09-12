@@ -1,34 +1,84 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+#[derive(Reflect, Resource, Default, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+struct DebugData {
+    grid_sizing: GridSizing,
+    player_translation: Vec2,
+    tile_offset: TileOffset,
+    tile_id: TileId,
+    tile_types: Vec<TileType>,
+}
+
+use crate::tilemap::{GridSizing, TileData, TileId, TileOffset, TileType};
+use bevy::window::{PresentMode, WindowTheme};
+use leafwing_input_manager::prelude::*;
+use player::{Action, PlayerStartBundle};
+use std::time::Duration;
+
+mod player;
+mod tilemap;
 
 #[derive(Component)]
 struct GameCamera;
-
-#[derive(Default, Component)]
-struct PlayerStart;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default()).insert(GameCamera);
     commands.spawn(LdtkWorldBundle {
         ldtk_handle: asset_server.load("levels/initial.ldtk"),
-        ..Default::default()
+        ..default()
     });
+    commands.insert_resource(TileData::default());
+}
+
+pub fn zoom_in(mut query: Query<&mut OrthographicProjection, With<Camera>>) {
+    for mut projection in query.iter_mut() {
+        projection.viewport_origin = (0., 0.).into();
+        projection.scale = 0.25;
+    }
 }
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(LdtkPlugin)
-        .add_startup_system(setup)
-        .insert_resource(LevelSelection::Index(0))
-        .register_ldtk_entity::<MyBundle>("MyEntityIdentifier")
-        .run();
-}
+    let window_cfg = Window {
+        title: "Weird Woods".into(),
+        resolution: (1024., 1024.).into(),
+        present_mode: PresentMode::AutoVsync,
+        fit_canvas_to_parent: true,
+        prevent_default_event_handling: false,
+        window_theme: Some(WindowTheme::Dark),
+        ..default()
+    };
 
-#[derive(Bundle, LdtkEntity)]
-pub struct MyBundle {
-    player_start: PlayerStart,
-    #[sprite_sheet_bundle]
-    #[bundle]
-    sprite_bundle: SpriteSheetBundle,
+    App::new()
+        .insert_resource(FixedTime::new(Duration::from_millis(16)))
+        .init_resource::<DebugData>()
+        .register_type::<DebugData>()
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(window_cfg),
+                ..default()
+            }),
+            // bevy::diagnostic::LogDiagnosticsPlugin::default(),
+            // bevy::diagnostic::FrameTimeDiagnosticsPlugin,
+            LdtkPlugin,
+            InputManagerPlugin::<Action>::default(),
+            ResourceInspectorPlugin::<DebugData>::default(),
+        ))
+        .register_ldtk_entity::<PlayerStartBundle>("PlayerStart")
+        .add_systems(Startup, (setup,))
+        .insert_resource(LevelSelection::Index(0))
+        .add_systems(
+            Update,
+            (
+                zoom_in,
+                player::player_movement,
+                bevy::window::close_on_esc,
+                tilemap::setup_tileset_enums,
+                player::spawn_player,
+            ),
+        )
+        .run();
 }
