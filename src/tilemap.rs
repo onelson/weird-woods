@@ -33,6 +33,7 @@ pub fn get_grid_size(level: &LdtkLevel) -> GridSizing {
 
 #[derive(Resource, Default)]
 pub struct TileData {
+    pub sizing: GridSizing,
     pub tile_ids: Vec<i32>,
     pub membership: HashMap<TileType, HashSet<i32>>,
 }
@@ -83,8 +84,9 @@ pub fn setup_tileset_enums(
             )
         })
         .collect();
-
+    let sizing = get_grid_size(level);
     commands.insert_resource(TileData {
+        sizing,
         tile_ids,
         membership,
     });

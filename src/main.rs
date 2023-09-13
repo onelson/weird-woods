@@ -7,18 +7,19 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 #[reflect(Resource, InspectorOptions)]
 struct DebugData {
     grid_sizing: GridSizing,
-    player_translation: Vec2,
-    tile_offset: TileOffset,
-    tile_id: TileId,
-    tile_types: Vec<TileType>,
+    player_trans: Vec2,
+    camera_trans: Vec2,
+    world_size: Vec2,
+    viewport_size: Vec2,
 }
 
-use crate::tilemap::{GridSizing, TileData, TileId, TileOffset, TileType};
+use crate::tilemap::{GridSizing, TileData};
 use bevy::window::{PresentMode, WindowTheme};
 use leafwing_input_manager::prelude::*;
 use player::{Action, PlayerStartBundle};
 use std::time::Duration;
 
+mod camera;
 mod player;
 mod tilemap;
 
@@ -34,17 +35,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(TileData::default());
 }
 
-pub fn zoom_in(mut query: Query<&mut OrthographicProjection, With<Camera>>) {
-    for mut projection in query.iter_mut() {
-        projection.viewport_origin = (0., 0.).into();
-        projection.scale = 0.25;
-    }
-}
-
 fn main() {
     let window_cfg = Window {
         title: "Weird Woods".into(),
-        resolution: (1024., 1024.).into(),
+        resolution: (1024., 768.).into(),
         present_mode: PresentMode::AutoVsync,
         fit_canvas_to_parent: true,
         prevent_default_event_handling: false,
@@ -73,11 +67,12 @@ fn main() {
         .add_systems(
             Update,
             (
-                zoom_in,
+                camera::zoom_in,
                 player::player_movement,
                 bevy::window::close_on_esc,
                 tilemap::setup_tileset_enums,
                 player::spawn_player,
+                camera::follow_player,
             ),
         )
         .run();

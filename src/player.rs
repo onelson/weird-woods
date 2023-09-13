@@ -1,8 +1,8 @@
 use crate::tilemap::{transform_to_tile_offset, TileData, TileType};
-use crate::DebugData;
+
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::prelude::{
-    default, Added, Bundle, Commands, Component, Entity, KeyCode, Query, Reflect, Res, ResMut,
+    default, Added, Bundle, Commands, Component, Entity, KeyCode, Query, Reflect, Res,
     SpriteBundle, Transform, With,
 };
 use bevy_ecs_ldtk::{GridCoords, LdtkEntity, LdtkLevel};
@@ -72,7 +72,6 @@ pub fn player_movement(
     level_query: Query<(Entity, &Handle<LdtkLevel>)>,
     levels: Res<Assets<LdtkLevel>>,
     tile_types: Res<TileData>,
-    mut monitor: ResMut<DebugData>,
 ) {
     // if we don't know which tiles are walkable, we can't move
     if tile_types.membership.is_empty() {
@@ -83,13 +82,9 @@ pub fn player_movement(
         let (_, level_handle) = level_query.single();
         let level = levels.get(level_handle).expect("level");
         let size = crate::tilemap::get_grid_size(level);
-        monitor.grid_sizing = size.clone();
 
-        monitor.player_translation = initial_xform.translation.truncate();
         let tile_offset = transform_to_tile_offset(&initial_xform, &size);
-        monitor.tile_offset = tile_offset;
         let tile_id = &tile_types.tile_ids[tile_offset];
-        monitor.tile_id = *tile_id;
 
         let current_tile: Vec<_> = tile_types
             .membership
@@ -97,7 +92,6 @@ pub fn player_movement(
             .filter_map(|(k, v)| if v.contains(tile_id) { Some(k) } else { None })
             .cloned()
             .collect();
-        monitor.tile_types = current_tile.clone();
 
         let move_speed = if current_tile.contains(&TileType::Swimmable) {
             0.75
