@@ -13,6 +13,7 @@ struct DebugData {
     viewport_size: Vec2,
 }
 
+use crate::key::KeyBundle;
 use crate::tilemap::{GridSizing, TileData};
 use bevy::window::{PresentMode, WindowTheme};
 use leafwing_input_manager::prelude::*;
@@ -20,6 +21,7 @@ use player::{Action, PlayerStartBundle};
 use std::time::Duration;
 
 mod camera;
+mod key;
 mod player;
 mod tilemap;
 
@@ -61,6 +63,7 @@ fn main() {
             InputManagerPlugin::<Action>::default(),
             ResourceInspectorPlugin::<DebugData>::default(),
         ))
+        .register_ldtk_entity::<KeyBundle>("Key")
         .register_ldtk_entity::<PlayerStartBundle>("PlayerStart")
         .add_systems(Startup, (setup,))
         .insert_resource(LevelSelection::Index(0))
@@ -72,6 +75,7 @@ fn main() {
                 bevy::window::close_on_esc,
                 tilemap::setup_tileset_enums,
                 player::spawn_player,
+                key::spawn_keys,
                 camera::follow_player,
             ),
         )
