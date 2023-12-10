@@ -11,6 +11,7 @@ struct DebugData {
     camera_trans: Vec2,
     world_size: Vec2,
     viewport_size: Vec2,
+    has_yellow_key: bool,
 }
 
 use crate::key::KeyBundle;
@@ -76,6 +77,7 @@ fn main() {
                 tilemap::setup_tileset_enums,
                 player::spawn_player,
                 key::spawn_keys,
+                player::collect_key,
                 camera::follow_player,
             ),
         )

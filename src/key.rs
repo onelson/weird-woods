@@ -10,7 +10,7 @@ use std::str::FromStr;
 #[derive(Default, Component, Reflect)]
 pub struct Key;
 
-#[derive(Component, Default, Debug, Reflect)]
+#[derive(Component, Default, Debug, Reflect, Eq, Hash, PartialEq, Copy, Clone)]
 pub enum KeyType {
     Yellow,
     #[default]
@@ -43,19 +43,24 @@ pub fn spawn_keys(
     asset_server: Res<AssetServer>,
     level_query: Query<(Entity, &Handle<LdtkLevel>)>,
     levels: Res<Assets<LdtkLevel>>,
-    query: Query<&GridCoords, Added<Key>>,
+    // Data loaded from LDtK to be replaced by new entities with sprites.
+    query: Query<(Entity, &GridCoords, &KeyType), Added<Key>>,
 ) {
-    for &coords in query.iter() {
+    for (data_entity, &coords, key_type) in query.iter() {
         let (_, level_handle) = level_query.single();
         let level = levels.get(level_handle).expect("level");
         let sizing = crate::tilemap::get_grid_size(level);
+
+        commands.entity(data_entity).despawn();
 
         let mut transform = crate::tilemap::grid_coords_to_transform(coords, sizing);
         // FIMXE: still needed?
         transform.translation.z = 10.;
 
+        // FIXME: needs to incude the type of key
         commands.spawn((
             Key,
+            *key_type,
             SpriteBundle {
                 texture: asset_server.load("key.png"),
                 transform,

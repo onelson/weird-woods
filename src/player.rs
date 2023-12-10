@@ -1,14 +1,15 @@
+use crate::key::{Key, KeyType};
 use crate::tilemap::{transform_to_tile_offset, TileData, TileType};
-
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::prelude::{
-    default, Added, Bundle, Commands, Component, Entity, KeyCode, Query, Reflect, Res,
-    SpriteBundle, Transform, With,
+    default, Added, Bundle, Commands, Component, Entity, KeyCode, Query, Reflect, Res, ResMut,
+    SpriteBundle, Transform, With, Without,
 };
 use bevy_ecs_ldtk::{GridCoords, LdtkEntity, LdtkLevel};
 use leafwing_input_manager::action_state::ActionState;
 use leafwing_input_manager::input_map::InputMap;
 use leafwing_input_manager::{Actionlike, InputManagerBundle};
+use std::collections::HashSet;
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
 pub enum Action {
@@ -24,6 +25,11 @@ pub struct PlayerStart;
 
 #[derive(Default, Component)]
 pub struct Player;
+
+#[derive(Default, Component, Debug)]
+pub struct Inventory {
+    keys: HashSet<KeyType>,
+}
 
 pub fn spawn_player(
     mut commands: Commands,
@@ -42,6 +48,7 @@ pub fn spawn_player(
 
         commands.spawn((
             Player,
+            Inventory::default(),
             SpriteBundle {
                 texture: asset_server.load("player.png"),
                 transform,
@@ -99,7 +106,7 @@ pub fn player_movement(
             2.5
         };
 
-        let mut proposed_xform = initial_xform.clone();
+        let mut proposed_xform = *initial_xform;
 
         if action.pressed(Action::Up) {
             proposed_xform.translation.y += move_speed;
@@ -139,4 +146,24 @@ pub struct PlayerStartBundle {
     player_start: PlayerStart,
     #[grid_coords]
     grid_coords: GridCoords,
+}
+
+#[allow(clippy::type_complexity)]
+pub fn collect_key(
+    mut commands: Commands,
+    query: Query<&Transform, With<Player>>,
+    query2: Query<(Entity, &Transform, &KeyType), (With<Key>, Without<Player>)>,
+    mut query3: Query<&mut Inventory>,
+    mut monitor: ResMut<crate::DebugData>,
+) {
+    for player_xform in query.iter() {
+        for (entity, key_xform, key_type) in query2.iter() {
+            if player_xform.translation.distance(key_xform.translation) < 16.0 {
+                let mut inventory = query3.single_mut();
+                inventory.keys.insert(*key_type);
+                monitor.has_yellow_key = matches!(key_type, KeyType::Yellow);
+                commands.entity(entity).despawn();
+            }
+        }
+    }
 }
